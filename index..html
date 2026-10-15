@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cellular Transport Challenge - Year 9 Science</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #27ae60;
+            --light: #ecf0f1;
+            --danger: #e74c3c;
+            --info: #2980b9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 25px;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            background-color: var(--light);
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 25px;
+        }
+
+        .game-section {
+            display: none;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .game-section.active {
+            display: block;
+        }
+
+        /* Simulation Canvas Styles */
+        #simCanvas {
+            border: 2px solid var(--primary);
+            border-radius: 6px;
+            background-color: #eef9ff;
+            display: block;
+            margin: 0 auto 15px auto;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #34495e;
+        }
+
+        button.action-btn {
+            background-color: var(--accent);
+        }
+
+        button.action-btn:hover {
+            background-color: #219150;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .option-btn {
+            background-color: #fff;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            text-align: left;
+            padding: 12px;
+        }
+
+        .option-btn:hover {
+            background-color: #f0f4f8;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .feedback.correct {
+            display: block;
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .feedback.incorrect {
+            display: block;
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .vocab-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .vocab-tag {
+            background: #e0e0e0;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .vocab-tag.used {
+            background: #a8e6cf;
+            color: #117a65;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Cellular Transport Challenge</h1>
+    <div class="subtitle">Cambridge IGCSE Science (Year 9) — Interactive Transport Lab</div>
+
+    <div class="score-board">
+        <span>Score: <span id="score">0</span></span>
+        <span>Stage: <span id="stage">1</span> of 3</span>
+    </div>
+
+    <!-- STAGE 1: Quiz Challenge -->
+    <div id="stage1" class="game-section active">
+        <h2>Stage 1: Transport Vocabulary Check</h2>
+        <p id="question-text">Loading question...</p>
+        <div class="options-grid" id="options-container"></div>
+        <div id="quiz-feedback" class="feedback"></div>
+        <button id="next-q-btn" style="display:none; margin-top:15px;" onclick="nextQuestion()">Next Question</button>
+    </div>
+
+    <!-- STAGE 2: Interactive Plant Cell Simulation -->
+    <div id="stage2" class="game-section">
+        <h2>Stage 2: Plant Cell Osmosis Lab</h2>
+        <p>Adjust the solution surrounding the plant cell to observe changes in <strong>turgor pressure</strong>, water movement, and cell state.</p>
+        <canvas id="simCanvas" width="500" height="300"></canvas>
+        <div class="controls">
+            <button onclick="setSolution('hypotonic')">Hypotonic Solution</button>
+            <button onclick="setSolution('isotonic')">Isotonic Solution</button>
+            <button onclick="setSolution('hypertonic')">Hypertonic Solution</button>
+        </div>
+        <p id="sim-status" style="text-align: center; font-weight: bold; min-height: 24px;"></p>
+        <button class="action-btn" onclick="finishStage2()" style="display:block; margin: 0 auto;">Confirm Understanding & Move to Stage 3</button>
+    </div>
+
+    <!-- STAGE 3: Active Transport Challenge -->
+    <div id="stage3" class="game-section">
+        <h2>Stage 3: Active Transport & Carrier Proteins</h2>
+        <p>Active transport moves molecules <em>against</em> their <strong>concentration gradient</strong> using energy. Click the <strong>protein carriers</strong> to move ions into the cell!</p>
+        <canvas id="activeCanvas" width="500" height="250" style="border:2px solid var(--primary); background:#fdfefe; display:block; margin:0 auto 15px auto;"></canvas>
+        <div class="controls">
+            <button class="action-btn" onclick="pumpIons()">Pump Ions Across Membrane</button>
+        </div>
+        <p id="active-status" style="text-align: center; font-weight: bold;"></p>
+        <button id="finish-btn" class="action-btn" style="display:none; margin: 15px auto 0 auto;" onclick="endGame()">Complete Lab</button>
+    </div>
+
+    <!-- FINAL SCREEN -->
+    <div id="final-screen" class="game-section">
+        <h2>Lab Completed!</h2>
+        <p>Great job applying your understanding of cellular transport processes.</p>
+        <h3>Your Final Score: <span id="final-score">0</span> points</h3>
+        <button onclick="location.reload()">Play Again</button>
+    </div>
+
+    <!-- Key Vocabulary Tracker -->
+    <h3>Target Key Terms Checklist</h3>
+    <div class="vocab-box" id="vocab-container"></div>
+</div>
+
+<script>
+    // Terms list tracking
+    const vocabularyList = [
+        "diffusion", "osmosis", "active transport", "concentration gradient", 
+        "water potential", "hypotonic solution", "hypertonic solution", 
+        "isotonic solution", "protein carriers", "turgid", "plasmolysed", 
+        "flaccid", "turgor pressure", "net movement"
+    ];
+
+    let currentScore = 0;
+    let currentQuestionIdx = 0;
+
+    const questions = [
+        {
+            q: "Which process is defined as the net movement of water particles from a region of higher water potential to lower water potential through a partially permeable membrane?",
+            options: ["Diffusion", "Osmosis", "Active Transport", "Turgor Pressure"],
+            correct: 1,
+            term: "osmosis"
+        },
+        {
+            q: "When particles move down a concentration gradient from higher to lower concentration without energy, this is called:",
+            options: ["Active transport", "Plasmolysis", "Diffusion", "Protein carrying"],
+            correct: 2,
+            term: "diffusion"
+        },
+        {
+            q: "A plant cell placed in a solution with higher water potential than its cytoplasm will absorb water and become:",
+            options: ["Plasmolysed", "Flaccid", "Turgid", "Isotonic"],
+            correct: 2,
+            term: "turgid"
+        },
+        {
+            q: "Movement of particles against a concentration gradient using energy requires structure in the membrane known as:",
+            options: ["Water potential barriers", "Protein carriers", "Turgor pressure pumps", "Hypotonic channels"],
+            correct: 1,
+            term: "protein carriers"
+        },
+        {
+            q: "If a cell is placed in a solution where there is no net movement of water because the water potentials inside and outside are equal, the solution is:",
+            options: ["Hypotonic", "Hypertonic", "Isotonic", "Plasmolysed"],
+            correct: 2,
+            term: "isotonic solution"
+        },
+        {
+            q: "When a plant cell loses water in a hypertonic solution and the cell membrane pulls away from the cell wall, it is described as:",
+            options: ["Turgid", "Flaccid", "Plasmolysed", "Active"],
+            correct: 2,
+            term: "plasmolysed"
+        }
+    ];
+
+    function initVocab() {
+        const container = document.getElementById('vocab-container');
+        container.innerHTML = '';
+        vocabularyList.forEach(term => {
+            const tag = document.createElement('span');
+            tag.className = 'vocab-tag';
+            tag.id = `vocab-${term.replace(/\s+/g, '-')}`;
+            tag.textContent = term;
+            container.appendChild(tag);
+        });
+    }
+
+    function markVocabUsed(term) {
+        const element = document.getElementById(`vocab-${term.replace(/\s+/g, '-')}`);
+        if (element) {
+            element.classList.add('used');
+        }
+    }
+
+    // Stage 1 Logic
+    function loadQuestion() {
+        const q = questions[currentQuestionIdx];
+        document.getElementById('question-text').textContent = q.q;
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+        document.getElementById('quiz-feedback').className = 'feedback';
+        document.getElementById('next-q-btn').style.display = 'none';
+
+        q.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = `${String.fromCharCode(65 + idx)}. ${opt}`;
+            btn.onclick = () => checkAnswer(idx);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selectedIdx) {
+        const q = questions[currentQuestionIdx];
+        const feedback = document.getElementById('quiz-feedback');
+        const buttons = document.querySelectorAll('.option-btn');
+
+        buttons.forEach(b => b.disabled = true);
+
+        if (selectedIdx === q.correct) {
+            currentScore += 10;
+            feedback.textContent = "Correct! +10 Points";
+            feedback.className = "feedback correct";
+            markVocabUsed(q.term);
+            markVocabUsed("net movement");
+            markVocabUsed("concentration gradient");
+            markVocabUsed("water potential");
+        } else {
+            feedback.textContent = `Incorrect. The correct answer was: ${q.options[q.correct]}`;
+            feedback.className = "feedback incorrect";
+        }
+
+        document.getElementById('score').textContent = currentScore;
+        document.getElementById('next-q-btn').style.display = 'block';
+    }
+
+    function nextQuestion() {
+        currentQuestionIdx++;
+        if (currentQuestionIdx < questions.length) {
+            loadQuestion();
+        } else {
+            startStage2();
+        }
+    }
+
+    // Stage 2 Logic: Canvas Osmosis Simulation
+    let cellState = "isotonic"; // hypotonic, hypertonic, isotonic
+
+    function startStage2() {
+        document.getElementById('stage1').classList.remove('active');
+        document.getElementById('stage2').classList.add('active');
+        document.getElementById('stage').textContent = '2';
+        drawStage2();
+    }
+
+    function setSolution(type) {
+        cellState = type;
+        drawStage2();
+        const status = document.getElementById('sim-status');
+        
+        if (type === 'hypotonic') {
+            status.textContent = "Hypotonic solution: Water enters cell by osmosis. Net movement in. Cell becomes TURGID with high TURGOR PRESSURE.";
+            markVocabUsed("hypotonic solution");
+            markVocabUsed("turgid");
+            markVocabUsed("turgor pressure");
+        } else if (type === 'hypertonic') {
+            status.textContent = "Hypertonic solution: Water leaves cell by osmosis. Cytoplasm shrinks away from wall — PLASMOLYSED.";
+            markVocabUsed("hypertonic solution");
+            markVocabUsed("plasmolysed");
+        } else {
+            status.textContent = "Isotonic solution: No net movement of water. Cell is FLACCID.";
+            markVocabUsed("flaccid");
+        }
+    }
+
+    function drawStage2() {
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw outer solution background
+        ctx.fillStyle = cellState === 'hypotonic' ? '#d4f1f9' : (cellState === 'hypertonic' ? '#aed6f1' : '#cbe4f9');
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Cell Wall (Fixed)
+        ctx.strokeStyle = '#27ae60';
+        ctx.lineWidth = 8;
+        ctx.strokeRect(150, 50, 200, 200);
+
+        // Membrane & Cytoplasm (Changes with state)
+        ctx.fillStyle = '#f9e79f';
+        ctx.beginPath();
+
+        if (cellState === 'hypotonic') {
+            // Turgid: Membrane pushes hard against cell wall
+            ctx.rect(154, 54, 192, 192);
+        } else if (cellState === 'isotonic') {
+            // Flaccid: Touches wall loosely
+            ctx.rect(158, 58, 184, 184);
+        } else if (cellState === 'hypertonic') {
+            // Plasmolysed: Pulled back from wall
+            ctx.rect(180, 80, 140, 140);
+        }
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#d35400';
+        ctx.stroke();
+
+        // Labels
+        ctx.fillStyle = '#333';
+        ctx.font = '14px sans-serif';
+        ctx.fillText("Cell Wall", 150, 42);
+        ctx.fillText(`State: ${cellState.toUpperCase()}`, 10, 25);
+    }
+
+    function finishStage2() {
+        currentScore += 20;
+        document.getElementById('score').textContent = currentScore;
+        startStage3();
+    }
+
+    // Stage 3 Logic: Active Transport
+    let pumpedCount = 0;
+
+    function startStage3() {
+        document.getElementById('stage2').classList.remove('active');
+        document.getElementById('stage3').classList.add('active');
+        document.getElementById('stage').textContent = '3';
+        drawStage3();
+    }
+
+    function drawStage3() {
+        const canvas = document.getElementById('activeCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Outside vs Inside
+        ctx.fillStyle = '#eaeded';
+        ctx.fillRect(0, 0, 200, canvas.height); // Low conc
+        ctx.fillStyle = '#d5f5e3';
+        ctx.fillRect(300, 0, 200, canvas.height); // High conc
+
+        // Membrane
+        ctx.fillStyle = '#f39c12';
+        ctx.fillRect(200, 0, 100, canvas.height);
+
+        // Protein Carrier
+        ctx.fillStyle = '#2980b9';
+        ctx.fillRect(225, 80, 50, 90);
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px sans-serif';
+        ctx.fillText("Protein", 230, 120);
+        ctx.fillText("Carrier", 232, 135);
+
+        // Labels
+        ctx.fillStyle = '#333';
+        ctx.font = '14px sans-serif';
+        ctx.fillText("Outside Cell (Low Conc.)", 20, 30);
+        ctx.fillText("Inside Cell (High Conc.)", 320, 30);
+
+        // Draw Ions
+        ctx.fillStyle = '#e74c3c';
+        // Outside ions
+        for(let i=0; i<3; i++) {
+            ctx.beginPath();
+            ctx.arc(50 + i*40, 120, 10, 0, Math.PI*2);
+            ctx.fill();
+        }
+        // Inside ions
+        for(let i=0; i < (8 + pumpedCount); i++) {
+            ctx.beginPath();
+            ctx.arc(330 + (i%4)*30, 70 + Math.floor(i/4)*30, 10, 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
+
+    function pumpIons() {
+        pumpedCount++;
+        currentScore += 5;
+        document.getElementById('score').textContent = currentScore;
+        drawStage3();
+
+        markVocabUsed("active transport");
+        markVocabUsed("protein carriers");
+
+        const status = document.getElementById('active-status');
+        status.textContent = `Pumped ${pumpedCount} ion(s) against the concentration gradient using ATP energy via Protein Carriers!`;
+
+        if (pumpedCount >= 3) {
+            document.getElementById('finish-btn').style.display = 'block';
+        }
+    }
+
+    function endGame() {
+        document.getElementById('stage3').classList.remove('active');
+        document.getElementById('final-screen').classList.add('active');
+        document.getElementById('final-score').textContent = currentScore;
+    }
+
+    // Initialization
+    initVocab();
+    loadQuestion();
+</script>
+</body>
+</html>
